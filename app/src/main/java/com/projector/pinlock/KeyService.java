@@ -9,15 +9,20 @@ public class KeyService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-            // Кнопка "Настройки" на пульте JMGO N5S
-            if (event.getKeyCode() == 605) {
+        // Ловим клавишу 605
+        if (event.getKeyCode() == 605) {
+            // Запускаем окно с паролем только в момент первого нажатия вниз
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
-                return true; // Блокируем сигнал, чтобы не открылось китайское меню
             }
+            
+            // ВАЖНО: возвращаем true ВСЕГДА для клавиши 605 (и для DOWN, и для UP, и для зажатий)
+            // Это полностью глушит сигнал, и система проектора вообще не узнает, что кнопка нажималась!
+            return true; 
         }
+        
         return super.onKeyEvent(event);
     }
 

@@ -14,37 +14,45 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 public class KeyService extends AccessibilityService {
 
-    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver wakeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_ON.equals(action) || Intent.ACTION_USER_PRESENT.equals(action)) {
-                // При пробуждении из сна отправляем команду системе JMGO серией повторов
-                reEnableService();
-            }
+            // При любом системном пробуждении или включении экрана возобновляем хук
+            triggerJmgoHook();
         }
     };
 
     @Override
     public void onCreate() {
         super.onCreate();
+        
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_USER_PRESENT);
-        registerReceiver(screenReceiver, filter);
+        filter.addAction("android.intent.action.DREAMING_STOPPED");
+        filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
+        registerReceiver(wakeReceiver, filter);
+
+        triggerJmgoHook();
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        try {
-            unregisterReceiver(screenReceiver);
-        } catch (Exception ignored) {}
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // Указываем системе немедленно перезапускать процесс при пробуждении из сна
+        triggerJmgoHook();
+        return START_STICKY;
     }
 
-    private void reEnableService() {
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        triggerJmgoHook();
+    }
+
+    private void triggerJmgoHook() {
         Handler handler = new Handler(Looper.getMainLooper());
-        int[] delays = {500, 2000, 5000};
+        int[] delays = {300, 1500, 4000, 8000};
         for (int delay : delays) {
             handler.postDelayed(() -> {
                 try {
@@ -59,14 +67,24 @@ public class KeyService extends AccessibilityService {
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        try {
+            unregisterReceiver(wakeReceiver);
+        } catch (Exception ignored) {}
+        // Если служба была убита системой во время сна - сразу шлем команду на перезапуск
+        triggerJmgoHook();
+    }
+
+    @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {}
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
         if (event.getKeyCode() == 605) {
-            // ФИЛЬТР: Первые 25 секунд после старта проектора игнорируем любые ложные сигналы
+            // Защита от фантомных сигналов при первой загрузке
             if (SystemClock.uptimeMillis() < 25000) {
-                return true; 
+                return true;
             }
 
             if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
@@ -85,13 +103,11 @@ public class KeyService extends AccessibilityService {
                 if (pkg != null) {
                     String current = pkg.toString();
 
-                    // Если русские настройки уже открыты - закрываем их
                     if ("com.jmgo.setting.clone".equals(current)) {
                         performGlobalAction(GLOBAL_ACTION_BACK);
                         return;
                     }
 
-                    // Если уже открыт ввод пароля - игнорируем
                     if (getPackageName().equals(current)) {
                         return;
                     }
@@ -99,7 +115,6 @@ public class KeyService extends AccessibilityService {
             }
         } catch (Exception ignored) {}
 
-        // Открываем экран ввода пароля с пометкой, что это физическая кнопка
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("from_remote", true);
@@ -107,5 +122,7 @@ public class KeyService extends AccessibilityService {
     }
 
     @Override
-    public void onInterrupt() {}
+    public void onInterrupt() {
+        triggerJmgoHook();
+    }
 }

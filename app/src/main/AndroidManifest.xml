@@ -14,7 +14,7 @@
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <activity
-            android:name="com.projector.pinlock.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true"
@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name="com.projector.pinlock.KeyService"
+            android:name=".KeyService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:directBootAware="true"
             android:stopWithTask="false"
@@ -41,7 +41,7 @@
         </service>
 
         <receiver
-            android:name="com.projector.pinlock.BootReceiver"
+            android:name=".BootReceiver"
             android:directBootAware="true"
             android:enabled="true"
             android:exported="true">

@@ -1,25 +1,16 @@
-plugins {
-    id 'com.android.application'
-}
-
-android {
-    namespace 'com.jmgo.pinlock'
-    compileSdk 33
-
-    defaultConfig {
-        applicationId "com.jmgo.pinlock"
-        minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0"
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.4'
     }
 }
 
-dependencies {
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
 }

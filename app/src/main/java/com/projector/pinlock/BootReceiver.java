@@ -10,25 +10,32 @@ public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        // 1. Отправляем команду сразу при старте системы
-        sendEnableCommand(context);
-
-        // 2. И страхуемся: повторяем через 5 секунд, когда все системные процессы JMGO точно инициализировались
+        // Проекторы JMGO прогружают свои службы медленно (до 30 сек).
+        // Поэтому отправляем команду серией: через 1, 4, 10, 20 и 35 секунд после старта.
+        int[] delays = {1000, 4000, 10000, 20000, 35000};
         final PendingResult result = goAsync();
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            try {
+
+        Handler handler = new Handler(Looper.getMainLooper());
+        for (int i = 0; i < delays.length; i++) {
+            final boolean isLast = (i == delays.length - 1);
+            handler.postDelayed(() -> {
                 sendEnableCommand(context);
-            } finally {
-                result.finish();
-            }
-        }, 5000);
+                if (isLast) {
+                    try {
+                        result.finish();
+                    } catch (Exception ignored) {}
+                }
+            }, delays[i]);
+        }
     }
 
-    private void sendEnableCommand(Context context) {
+    public static void sendEnableCommand(Context context) {
         try {
             Intent jmgoIntent = new Intent("action.jmgo.request.accessibility.service");
             jmgoIntent.putExtra("compontentNameStr", context.getPackageName() + "/" + KeyService.class.getName());
             jmgoIntent.putExtra("enabled", true);
+            jmgoIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+            jmgoIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
             context.sendBroadcast(jmgoIntent);
         } catch (Exception ignored) {}
     }

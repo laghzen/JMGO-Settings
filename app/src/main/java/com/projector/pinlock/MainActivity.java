@@ -20,12 +20,23 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        // Посылаем системную команду Bonfire OS на включение службы без меню настроек
+        // Инженерная активация перехвата кнопки в Bonfire OS
         enableJmgoService();
 
         prefs = getSharedPreferences("pin_prefs", MODE_PRIVATE);
+
+        // Проверяем: запущено ли окно физической кнопкой пульта (из KeyService)
+        boolean fromKey = getIntent().getBooleanExtra("from_key", false);
+
+        // Если пароль уже задан, но это не нажатие кнопки пульта (автозапуск/старт системы) -> мгновенно закрываемся
+        if (prefs.contains("saved_pin") && !fromKey) {
+            finish();
+            return;
+        }
+
+        setContentView(R.layout.activity_main);
+
         statusText = findViewById(R.id.statusText);
         pinDisplay = findViewById(R.id.pinDisplay);
 
@@ -98,10 +109,10 @@ public class MainActivity extends Activity {
             } else {
                 if (tempSetupPin.equals(pin)) {
                     prefs.edit().putString("saved_pin", pin).apply();
-                    Toast.makeText(this, "Пароль успешно задан!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Пароль сохранен!", Toast.LENGTH_SHORT).show();
                     openRussianSettings();
                 } else {
-                    Toast.makeText(this, "Не совпало! Начните сначала", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Не совпало, попробуйте снова", Toast.LENGTH_SHORT).show();
                     tempSetupPin = null;
                     updatePrompt();
                 }

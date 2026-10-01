@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.jmgo.pinlock'
+    namespace 'com.projector.pinlock'
     compileSdk 33
 
     defaultConfig {

@@ -21,19 +21,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Инженерная активация перехвата кнопки в Bonfire OS
+        // Всегда активируем службу при открытии
         enableJmgoService();
 
         prefs = getSharedPreferences("pin_prefs", MODE_PRIVATE);
-
-        // Проверяем: запущено ли окно физической кнопкой пульта (из KeyService)
-        boolean fromKey = getIntent().getBooleanExtra("from_key", false);
-
-        // Если пароль уже задан, но это не нажатие кнопки пульта (автозапуск/старт системы) -> мгновенно закрываемся
-        if (prefs.contains("saved_pin") && !fromKey) {
-            finish();
-            return;
-        }
 
         setContentView(R.layout.activity_main);
 

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,10 +22,17 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Всегда активируем службу при открытии
         enableJmgoService();
 
         prefs = getSharedPreferences("pin_prefs", MODE_PRIVATE);
+
+        boolean fromRemote = getIntent().getBooleanExtra("from_remote", false);
+
+        // Если пароль уже задан, но это не кнопка пульта, и система запустилась меньше 30 сек назад -> выходим
+        if (prefs.contains("saved_pin") && !fromRemote && SystemClock.uptimeMillis() < 30000) {
+            finish();
+            return;
+        }
 
         setContentView(R.layout.activity_main);
 
